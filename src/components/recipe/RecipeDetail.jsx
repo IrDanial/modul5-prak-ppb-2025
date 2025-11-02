@@ -5,7 +5,7 @@ import { useReviews, useCreateReview } from '../../hooks/useReviews';
 import { useIsFavorited } from '../../hooks/useFavorites';
 import { getUserIdentifier } from '../../hooks/useFavorites';
 import { formatDate, getDifficultyColor, getStarRating } from '../../utils/helpers';
-import { ArrowLeft, Heart, Clock, Users, ChefHat, Star, Send, Edit, Trash2 } from 'lucide-react';
+import { ArrowLeft, Heart, Clock, Users, ChefHat, Star, Send, Edit, Trash2, Share2 } from 'lucide-react';
 import recipeService from '../../services/recipeService';
 import ConfirmModal from '../modals/ConfirmModal';
 import FavoriteButton from '../common/FavoriteButton';
@@ -45,6 +45,27 @@ export default function RecipeDetail({ recipeId, onBack, onEdit, category = 'mak
   };
 
   const colors = categoryColors[category] || categoryColors.makanan;
+
+  const handleShare = async () => {
+    const urlToShare = window.location.href;
+    const shareData = {
+      title: `Resep ${recipe?.name}`,
+      text: `Resep ${recipe?.name} - ${recipe?.description}`,
+      url: urlToShare,
+    };
+
+    try {
+      if (navigator.share){
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(urlToShare);
+        alert('Link resep berhasil disalin ke clipboard!');
+      }
+    } catch (err) {
+      console.error('Error sharing recipe:', err);
+      alert('Terjadi kesalahan saat membagikan resep');
+    }
+  };
 
   const handleSubmitReview = async (e) => {
     e.preventDefault();
@@ -169,6 +190,13 @@ export default function RecipeDetail({ recipeId, onBack, onEdit, category = 'mak
           {/* Action Buttons */}
           {onEdit && (
             <div className="flex gap-2">
+              <button
+              onClick={handleShare}
+              className='flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors'
+              >
+                <Share2 className='w-4 h-4' />
+                <span className='hidden md:inline'>Bagikan</span>
+              </button>
               <button
                 onClick={() => {
                   console.log('🖱️ Edit button clicked in RecipeDetail');

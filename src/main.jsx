@@ -1,5 +1,5 @@
 // src/main.jsx
-import { StrictMode, useState } from 'react'
+import { StrictMode, useEffect, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import SplashScreen from './pages/SplashScreen';
 import HomePage from './pages/HomePage';
@@ -22,6 +22,18 @@ function AppRoot() {
   const [selectedCategory, setSelectedCategory] = useState('makanan');
   const [editingRecipeId, setEditingRecipeId] = useState(null);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const recipeIdFromUrl = params.get('recipe');
+    const categoryFromUrl = params.get('category');
+
+    if (recipeIdFromUrl) {
+      setSelectedRecipeId(recipeIdFromUrl);
+      setSelectedCategory(categoryFromUrl || 'makanan');
+      setMode('detail');
+    }
+  }, []);
+
   const handleSplashComplete = () => {
     setShowSplash(false);
   };
@@ -31,6 +43,7 @@ function AppRoot() {
     setMode('list');
     setSelectedRecipeId(null);
     setEditingRecipeId(null);
+    window.history.pushState({}, '', window.location.pathname);
   };
 
   const handleCreateRecipe = () => {
@@ -38,9 +51,15 @@ function AppRoot() {
   };
 
   const handleRecipeClick = (recipeId, category) => {
-    setSelectedRecipeId(recipeId);
-    setSelectedCategory(category || currentPage);
+    if (!recipeId) return;
+    const validCategory = category || currentPage || 'makanan';
+    setEditingRecipeId(recipeId);
+    setSelectedCategory(validCategory);
     setMode('detail');
+    const params = new URLSearchParams();
+    params.set('recipe', recipeId);
+    params.set('category', validCategory);
+    window.history.pushState({}, '', `?${params.toString()}`);
   };
 
   const handleEditRecipe = (recipeId) => {
@@ -54,6 +73,7 @@ function AppRoot() {
     setMode('list');
     setSelectedRecipeId(null);
     setEditingRecipeId(null);
+    window.history.pushState({}, '', window.location.pathname);
   };
 
   const handleCreateSuccess = (newRecipe) => {
@@ -113,7 +133,7 @@ function AppRoot() {
       case 'minuman':
         return <MinumanPage onRecipeClick={handleRecipeClick} />;
       case 'profile':
-        return <ProfilePage onRecipeClick={handleRecipeClick} />;
+        return <ProfilePage />;
       default:
         return <HomePage onRecipeClick={handleRecipeClick} onNavigate={handleNavigation} />;
     }

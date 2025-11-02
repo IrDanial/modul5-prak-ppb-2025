@@ -97,7 +97,7 @@ export default function MakananPage({ onRecipeClick }) {
                 </p>
               </div>
             ) : (
-              <RecipeGrid recipes={filteredRecipes} onRecipeClick={onRecipeClick} />
+              <RecipeGrid recipes={filteredRecipes} onRecipeClick={(recipeId) => onRecipeClick(recipeId, 'makanan')} />
             )}
 
             {/* Pagination */}

@@ -39,7 +39,7 @@ export default function HomePage({ onRecipeClick, onNavigate }) {
           recipes={featuredMakanan}
           loading={loadingMakanan}
           error={errorMakanan}
-          onRecipeClick={onRecipeClick}
+          onRecipeClick={(recipeId) => onRecipeClick(recipeId, 'makanan')}
           onNavigate={onNavigate}
         />
 
@@ -48,7 +48,7 @@ export default function HomePage({ onRecipeClick, onNavigate }) {
           recipes={featuredMinuman}
           loading={loadingMinuman}
           error={errorMinuman}
-          onRecipeClick={onRecipeClick}
+          onRecipeClick={(recipeId) => onRecipeClick(recipeId, 'minuman')}
           onNavigate={onNavigate}
         />
       </div>

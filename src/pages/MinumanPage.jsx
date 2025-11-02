@@ -97,7 +97,7 @@ export default function MinumanPage({ onRecipeClick }) {
                 </p>
               </div>
             ) : (
-              <RecipeGrid recipes={filteredRecipes} onRecipeClick={onRecipeClick} />
+              <RecipeGrid recipes={filteredRecipes} onRecipeClick={(recipeId) => onRecipeClick(recipeId, 'minuman')} />
             )}
 
             {/* Pagination */}
