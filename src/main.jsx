@@ -1,5 +1,5 @@
 // src/main.jsx
-import { StrictMode, useState } from 'react'
+import { StrictMode, useState, useEffect } from 'react'
 import { createRoot } from 'react-dom/client'
 import SplashScreen from './pages/SplashScreen';
 import HomePage from './pages/HomePage';
@@ -22,25 +22,57 @@ function AppRoot() {
   const [selectedCategory, setSelectedCategory] = useState('makanan');
   const [editingRecipeId, setEditingRecipeId] = useState(null);
 
+  // 👇 EFEK INI MEMBACA URL SAAT APLIKASI DIBUKA (PENTING UNTUK SHARE)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const recipeIdFromUrl = params.get('recipe');
+    const categoryFromUrl = params.get('category');
+
+    if (recipeIdFromUrl) {
+      setSelectedRecipeId(recipeIdFromUrl);
+      setSelectedCategory(categoryFromUrl || 'makanan');
+      setMode('detail');
+    }
+  }, []); // Hanya berjalan sekali
+
   const handleSplashComplete = () => {
     setShowSplash(false);
   };
 
+  // 👇 FUNGSI INI MEMBERSIHKAN URL
   const handleNavigation = (page) => {
     setCurrentPage(page);
     setMode('list');
     setSelectedRecipeId(null);
     setEditingRecipeId(null);
+    // Hapus parameter ?recipe=... dari URL
+    window.history.pushState({}, '', window.location.pathname);
   };
 
   const handleCreateRecipe = () => {
     setMode('create');
   };
 
+  // 👇 FUNGSI INI MENGATUR URL
   const handleRecipeClick = (recipeId, category) => {
+    // Pelindung jika recipeId tidak ada
+    if (!recipeId) {
+      console.error("handleRecipeClick dipanggil tanpa recipeId");
+      return; 
+    }
+
+    const validCategory = category || currentPage || 'makanan';
+    
     setSelectedRecipeId(recipeId);
-    setSelectedCategory(category || currentPage);
+    setSelectedCategory(validCategory);
     setMode('detail');
+    
+    // Buat URL baru untuk di-share
+    const params = new URLSearchParams();
+    params.set('recipe', recipeId);
+    params.set('category', validCategory);
+    // Update URL di browser tanpa me-reload halaman
+    window.history.pushState({}, '', `?${params.toString()}`);
   };
 
   const handleEditRecipe = (recipeId) => {
@@ -50,16 +82,18 @@ function AppRoot() {
     console.log('✅ Mode changed to: edit');
   };
 
+  // 👇 FUNGSI INI MEMBERSIHKAN URL
   const handleBack = () => {
     setMode('list');
     setSelectedRecipeId(null);
     setEditingRecipeId(null);
+    // Hapus parameter ?recipe=... dari URL
+    window.history.pushState({}, '', window.location.pathname);
   };
 
   const handleCreateSuccess = (newRecipe) => {
     alert('Resep berhasil dibuat!');
     setMode('list');
-    // Optionally navigate to the new recipe's category
     if (newRecipe && newRecipe.category) {
       setCurrentPage(newRecipe.category);
     }
@@ -113,6 +147,7 @@ function AppRoot() {
       case 'minuman':
         return <MinumanPage onRecipeClick={handleRecipeClick} />;
       case 'profile':
+        // 👇 INI PERBAIKANNYA: KEMBALIKAN onRecipeClick
         return <ProfilePage onRecipeClick={handleRecipeClick} />;
       default:
         return <HomePage onRecipeClick={handleRecipeClick} onNavigate={handleNavigation} />;

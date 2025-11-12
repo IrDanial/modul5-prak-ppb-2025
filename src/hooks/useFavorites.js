@@ -1,6 +1,8 @@
+// src/hooks/useFavorites.js
 import { useState, useEffect, useCallback } from 'react';
 import favoriteService from '../services/favoriteService';
 import userService from '../services/userService';
+import { queryCache } from '../utils/queryCache'; // 👈 IMPORT CACHE
 
 /**
  * Get user identifier from localStorage or generate new one
@@ -18,15 +20,34 @@ export function useFavorites() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const userIdentifier = getUserIdentifier();
+  const cacheKey = `favorites_${userIdentifier}`; // 👈 Buat kunci cache unik
 
-  const fetchFavorites = useCallback(async () => {
+  const fetchFavorites = useCallback(async (options = {}) => {
+    const { forceRefetch = false } = options;
+
     try {
       setLoading(true);
       setError(null);
-      const response = await favoriteService.getFavorites(userIdentifier);
+      
+      // Cek cache terlebih dahulu
+      if (!forceRefetch) {
+        const cachedData = queryCache.get(cacheKey);
+        if (cachedData) {
+          setFavorites(cachedData);
+          setLoading(false);
+          return; // Berhenti di sini, data dari cache
+        }
+      }
+
+      // Jika tidak ada di cache, fetch ke API
+      console.log(`[API] FETCH: ${cacheKey}`);
+      [cite_start]const response = await favoriteService.getFavorites(userIdentifier); [cite: 284-288]
       
       if (response.success) {
-        setFavorites(response.data || []);
+        const data = response.data || [];
+        setFavorites(data);
+        // Simpan hasil fetch ke cache
+        queryCache.set(cacheKey, data);
       } else {
         setError(response.message || 'Failed to fetch favorites');
       }
@@ -36,7 +57,7 @@ export function useFavorites() {
     } finally {
       setLoading(false);
     }
-  }, [userIdentifier]);
+  }, [userIdentifier, cacheKey]);
 
   useEffect(() => {
     fetchFavorites();
@@ -46,7 +67,8 @@ export function useFavorites() {
     favorites,
     loading,
     error,
-    refetch: fetchFavorites,
+    // Modifikasi refetch agar bisa memaksa
+    refetch: () => fetchFavorites({ forceRefetch: true }),
   };
 }
 
@@ -58,18 +80,21 @@ export function useToggleFavorite() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const userIdentifier = getUserIdentifier();
+  const cacheKey = `favorites_${userIdentifier}`; // 👈 Buat kunci cache yang sama
 
   const toggleFavorite = async (recipeId) => {
     try {
       setLoading(true);
       setError(null);
       
-      const response = await favoriteService.toggleFavorite({
+      [cite_start]const response = await favoriteService.toggleFavorite({ [cite: 294-297]
         recipe_id: recipeId,
         user_identifier: userIdentifier,
       });
       
       if (response.success) {
+        // PENTING: Hapus cache 'favorites' karena datanya sudah basi
+        queryCache.invalidate(cacheKey);
         return response.data;
       } else {
         setError(response.message || 'Failed to toggle favorite');
@@ -104,6 +129,8 @@ export function useIsFavorited(recipeId) {
   const toggleFavorite = async () => {
     const result = await toggle(recipeId);
     if (result) {
+      // Panggil refetch (yang sekarang sudah dimodifikasi)
+      // Ini akan memaksa useFavorites mengambil data baru dan memperbarui cache
       await refetch();
     }
     return result;
